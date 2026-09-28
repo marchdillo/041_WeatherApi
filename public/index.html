@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pelacak Lokasi</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --laut: #0b2530;
+        --laut-2: #103544;
+        --garis: #24586b;
+        --kabut: #e4f0ee;
+        --kabut-redup: #8fb0b3;
+        --kuning: #f2b84b;
+        --galat: #ff8a7a;
+        color-scheme: dark;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+      }
+      html,
+      body {
+        min-height: 100%;
+      }
+      body {
+        font-family: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+        background: var(--laut);
+        color: var(--kabut);
+        padding: clamp(16px, 4vw, 48px);
+        line-height: 1.4;
+      }
+      .halaman {
+        max-width: 1120px;
+        margin: 0 auto;
+      }
+
+      header {
+        display: flex;
+        justify-content: space-between;
+        gap: 24px;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        margin-bottom: 28px;
+      }
+      h1 {
+        font-size: clamp(2.2rem, 6vw, 4.2rem);
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        line-height: 0.95;
+      }
+      .identitas {
+        font-size: 0.9rem;
+        color: var(--kabut-redup);
+        text-align: right;
+      }
+      .identitas b {
+        color: var(--kabut);
+        font-weight: 600;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(300px, 400px) 1fr;
+        gap: 28px;
+        align-items: start;
+      }
+      @media (max-width: 860px) {
+        .layout {
+          grid-template-columns: 1fr;
+        }
+        .identitas {
+          text-align: left;
+        }
+      }
+
+      /* pencarian */
+      form {
+        display: flex;
+        border: 2px solid var(--garis);
+        border-radius: 999px;
+        padding: 5px;
+        background: var(--laut-2);
+        transition: border-color 0.2s;
+      }
+      form:focus-within {
+        border-color: var(--kuning);
+      }
+      input {
+        flex: 1;
+        min-width: 0;
+        background: none;
+        border: 0;
+        color: var(--kabut);
+        font: inherit;
+        font-size: 1.05rem;
+        padding: 10px 16px;
+        outline: none;
+      }
+      input::placeholder {
+        color: var(--kabut-redup);
+        opacity: 0.7;
+      }
+      button {
+        font: inherit;
+        font-weight: 600;
+        border: 0;
+        border-radius: 999px;
+        cursor: pointer;
+        background: var(--kuning);
+        color: var(--laut);
+        padding: 10px 20px;
+      }
+      button:hover {
+        filter: brightness(1.08);
+      }
+      button:focus-visible {
+        outline: 3px solid var(--kabut);
+        outline-offset: 2px;
+      }
+      button:disabled {
+        opacity: 0.6;
+        cursor: progress;
+      }
+      label {
+        display: block;
+        margin: 0 0 8px 18px;
+        font-size: 0.85rem;
+        color: var(--kabut-redup);
+      }
+
+      .pesan {
+        min-height: 1.6em;
+        margin: 12px 18px 0;
+        font-size: 0.92rem;
+        color: var(--kabut-redup);
+      }
+      .pesan.galat {
+        color: var(--galat);
+      }
+
+      /* hasil: garis vertikal = tingkat wilayah (negara > provinsi > kecamatan) */
+      dl {
+        margin-top: 18px;
+      }
+      .baris {
+        padding: 12px 0 12px 22px;
+        position: relative;
+        border-bottom: 1px solid var(--garis);
+      }
+      dt {
+        font-size: 0.82rem;
+        color: var(--kabut-redup);
+      }
+      dd {
+        font-size: 1.55rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        overflow-wrap: anywhere;
+        min-height: 1.4em;
+      }
+      .wilayah::before {
+        content: "";
+        position: absolute;
+        left: 4px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: var(--garis);
+      }
+      .wilayah::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 50%;
+        width: 10px;
+        height: 10px;
+        margin-top: -5px;
+        border-radius: 50%;
+        background: var(--laut);
+        border: 2px solid var(--kuning);
+      }
+      .wilayah:nth-of-type(2) {
+        margin-left: 14px;
+      }
+      .wilayah:nth-of-type(3) {
+        margin-left: 28px;
+      }
+      .wilayah:nth-of-type(1)::before {
+        top: 50%;
+      }
+      .wilayah:nth-of-type(3)::before {
+        bottom: 50%;
+      }
+      .angka {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0 20px;
+      }
+      .angka .baris {
+        padding-left: 0;
+      }
+      .angka dd {
+        font-variant-numeric: tabular-nums;
+      }
+      .angka small {
+        font-size: 0.8rem;
+        color: var(--kuning);
+        margin-left: 4px;
+        font-weight: 400;
+      }
+      dd.kosong {
+        color: var(--garis);
+      }
+
+      /* peta */
+      .peta {
+        background: var(--laut-2);
+        border: 2px solid var(--garis);
+        border-radius: 20px;
+        padding: 14px;
+      }
+      svg {
+        width: 100%;
+        height: auto;
+        display: block;
+        border-radius: 10px;
+        background: #0c2a36;
+      }
+      .lintang line,
+      .bujur line {
+        stroke: var(--garis);
+        stroke-width: 0.6;
+      }
+      .lintang line.nol,
+      .bujur line.nol {
+        stroke: var(--kabut-redup);
+        stroke-width: 1;
+      }
+      svg text {
+        fill: var(--kabut-redup);
+        font-size: 8px;
+        font-family: inherit;
+      }
+      #reticle {
+        transition:
+          transform 1.1s cubic-bezier(0.2, 0.8, 0.2, 1),
+          opacity 0.4s;
+        opacity: 0;
+      }
+      #reticle.tampil {
+        opacity: 1;
+      }
+      #reticle .silang {
+        stroke: var(--kuning);
+        stroke-width: 0.8;
+        stroke-dasharray: 4 4;
+      }
+      #reticle .titik {
+        fill: var(--kuning);
+      }
+      #reticle .cincin {
+        fill: none;
+        stroke: var(--kuning);
+        stroke-width: 1.5;
+        transform-box: fill-box;
+        transform-origin: center;
+      }
+      #reticle.denyut .cincin {
+        animation: denyut 1.2s ease-out 1;
+      }
+      @keyframes denyut {
+        from {
+          transform: scale(0.4);
+          opacity: 1;
+        }
+        to {
+          transform: scale(4);
+          opacity: 0;
+        }
+      }
+      .keterangan {
+        margin: 10px 4px 0;
+        font-size: 0.88rem;
+        color: var(--kabut-redup);
+        min-height: 1.3em;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        #reticle {
+          transition: none;
+        }
+        #reticle.denyut .cincin {
+          animation: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="halaman">
+      <header>
+        <h1>Di mana<br />tempat itu?</h1>
+        <p class="identitas">
+          Nama: <b>march dillo kemal hakim</b><br />
+          NIM: <b>20240140041</b>
+        </p>
+      </header>
+
+      <div class="layout">
+        <section aria-label="Pencarian lokasi">
+          <label for="lokasi">Lokasi</label>
+          <form id="form">
+            <input
+              id="lokasi"
+              name="lokasi"
+              type="text"
+              placeholder="Contoh: Kasihan, Bantul"
+              autocomplete="off"
+              required
+            />
+            <button id="tombol" type="submit">Cari</button>
+          </form>
+          <p id="pesan" class="pesan" role="status" aria-live="polite">
+            Ketik nama tempat, lalu tekan Cari.
+          </p>
+
+          <dl>
+            <div class="baris wilayah">
+              <dt>Negara</dt>
+              <dd id="negara" class="kosong">-</dd>
+            </div>
+            <div class="baris wilayah">
+              <dt>Provinsi</dt>
+              <dd id="provinsi" class="kosong">-</dd>
+            </div>
+            <div class="baris wilayah">
+              <dt>Kecamatan</dt>
+              <dd id="kecamatan" class="kosong">-</dd>
+            </div>
+            <div class="angka">
+              <div class="baris">
+                <dt>Longitude</dt>
+                <dd id="longitude" class="kosong">-</dd>
+              </div>
+              <div class="baris">
+                <dt>Latitude</dt>
+                <dd id="latitude" class="kosong">-</dd>
+              </div>
+            </div>
+          </dl>
+        </section>
+
+        <section class="peta" aria-label="Posisi di peta dunia">
+          <svg
+            id="peta"
+            viewBox="0 0 720 360"
+            role="img"
+            aria-label="Grid koordinat dunia dengan penanda lokasi"
+          >
+            <g class="bujur" id="bujur"></g>
+            <g class="lintang" id="lintang"></g>
+            <g id="reticle" transform="translate(360 180)">
+              <line class="silang" x1="-800" y1="0" x2="800" y2="0" />
+              <line class="silang" x1="0" y1="-800" x2="0" y2="800" />
+              <circle class="cincin" r="8" />
+              <circle class="titik" r="4" />
+            </g>
+          </svg>
+          <p id="keterangan" class="keterangan">
+            Penanda akan bergerak ke posisi lokasi yang kamu cari.
+          </p>
+        </section>
+      </div>
+    </div>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+
+      // Gambar grid koordinat (proyeksi equirectangular: 1 derajat = 2 unit)
+      (function gambarGrid() {
+        let bujur = "",
+          lintang = "";
+        for (let lon = -180; lon <= 180; lon += 30) {
+          const x = (lon + 180) * 2;
+          bujur += `<line x1="${x}" y1="0" x2="${x}" y2="360" class="${lon === 0 ? "nol" : ""}"/>`;
+          if (lon > -180 && lon < 180)
+            bujur += `<text x="${x + 3}" y="354">${lon}°</text>`;
+        }
+        for (let lat = -90; lat <= 90; lat += 30) {
+          const y = (90 - lat) * 2;
+          lintang += `<line x1="0" y1="${y}" x2="720" y2="${y}" class="${lat === 0 ? "nol" : ""}"/>`;
+          if (lat > -90 && lat < 90)
+            lintang += `<text x="4" y="${y - 3}">${lat}°</text>`;
+        }
+        $("bujur").innerHTML = bujur;
+        $("lintang").innerHTML = lintang;
+      })();
+
+      const isi = (id, teks) => {
+        const el = $(id);
+        el.textContent = teks;
+        el.classList.toggle("kosong", teks === "-");
+      };
+      const arah = (nilai, positif, negatif) =>
+        `<small>${nilai >= 0 ? positif : negatif}</small>`;
+
+      function tampilkanKoordinat(lon, lat) {
+        $("longitude").innerHTML =
+          `${Math.abs(lon).toFixed(5)}° ${arah(lon, "BT", "BB")}`;
+        $("latitude").innerHTML =
+          `${Math.abs(lat).toFixed(5)}° ${arah(lat, "LU", "LS")}`;
+        $("longitude").classList.remove("kosong");
+        $("latitude").classList.remove("kosong");
+      }
+
+      function geserReticle(lon, lat) {
+        const r = $("reticle");
+        r.setAttribute(
+          "style",
+          `transform: translate(${(lon + 180) * 2}px, ${(90 - lat) * 2}px)`,
+        );
+        r.classList.add("tampil");
+        r.classList.remove("denyut");
+        void r.getBoundingClientRect();
+        setTimeout(() => r.classList.add("denyut"), 700);
+      }
+
+      function setPesan(teks, galat = false) {
+        const p = $("pesan");
+        p.textContent = teks;
+        p.classList.toggle("galat", galat);
+      }
+
+      $("form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const q = $("lokasi").value.trim();
+        if (!q) return;
+
+        $("tombol").disabled = true;
+        setPesan("Mencari lokasi...");
+
+        try {
+          const res = await fetch(`/api/lokasi?kota=${encodeURIComponent(q)}`);
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.message || "Terjadi kesalahan.");
+
+          isi("negara", data.negara);
+          isi("provinsi", data.provinsi);
+          isi("kecamatan", data.kecamatan);
+          tampilkanKoordinat(data.longitude, data.latitude);
+          geserReticle(data.longitude, data.latitude);
+
+          setPesan("Lokasi ditemukan.");
+          $("keterangan").textContent = data.nama_lengkap;
+        } catch (err) {
+          setPesan(
+            err.message + " Periksa ejaan atau coba nama yang lebih spesifik.",
+            true,
+          );
+        } finally {
+          $("tombol").disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>
